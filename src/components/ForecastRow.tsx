@@ -33,7 +33,7 @@ export const ForecastRow = ({
     <View style={styles.row}>
       <Text style={[styles.day, { color: colors.text }]}>{dayLabel}</Text>
       <View style={styles.glyph}>
-        <WeatherArt code={icon} isDay={isDay} size={30} colors={colors} playing={false} />
+        <WeatherArt code={icon} isDay={isDay} size={30} colors={colors} />
       </View>
       <View style={styles.temps}>
         <Text style={[styles.min, { color: colors.muted }]}>{formatTemp(minC, tempUnit)}</Text>

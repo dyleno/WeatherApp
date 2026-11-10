@@ -8,6 +8,7 @@ const { formatTemp } = require('../build-test/core/temperature');
 const { glyphForIcon, humidityKey } = require('../build-test/core/conditions');
 const { recolorLottieColors } = require('../build-test/core/lottieRecolor');
 const { artKeyForIcon } = require('../build-test/core/weatherArt');
+const { getCondition, setCondition, subscribeCondition } = require('../build-test/core/conditionStore');
 const { withTimeout } = require('../build-test/core/async');
 
 const tests = [];
@@ -138,6 +139,25 @@ test('withTimeout geeft de onderliggende waarde door vóór de deadline', async 
 
 test('withTimeout reject op de deadline bij een nooit-resolvende promise', async () => {
   await assert.rejects(withTimeout(new Promise(() => {}), 10), /timeout/);
+});
+
+test('conditie-store: start leeg', () => {
+  assert.equal(getCondition(), null);
+});
+
+test('conditie-store: publiceert en notificeert abonnees, niet bij zelfde waarde', () => {
+  const seen = [];
+  const stop = subscribeCondition(() => seen.push(getCondition()));
+  setCondition('10d', true);
+  setCondition('10d', true); // zelfde waarde → geen extra notitie
+  setCondition('01n', false);
+  stop();
+  setCondition('03d', true); // afmeldt → geen notitie meer
+  assert.deepEqual(seen, [
+    { icon: '10d', isDay: true },
+    { icon: '01n', isDay: false },
+  ]);
+  assert.deepEqual(getCondition(), { icon: '03d', isDay: true });
 });
 
 let failed = 0;

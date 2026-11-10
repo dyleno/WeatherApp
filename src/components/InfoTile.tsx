@@ -23,7 +23,7 @@ export const InfoTile = ({ icon, label, value, sub, colors, isLast = false }: Pr
     ]}
   >
     <MaterialCommunityIcons name={icon} size={18} color={colors.muted} />
-    <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
+    <Text style={[styles.label, { color: colors.muted }]} numberOfLines={1}>{label}</Text>
     <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
     {sub ? <View style={styles.sub}>{sub}</View> : null}
   </View>

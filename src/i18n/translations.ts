@@ -10,7 +10,7 @@ const nl = {
   'weather.windFrom': 'Uit {dir}',
   'weather.pressure': 'Luchtdruk',
   'weather.pressureUnit': 'hPa',
-  'weather.humidity': 'Luchtvochtigheid',
+  'weather.humidity': 'Vochtigheid',
   'weather.trend.rising': 'stijgend',
   'weather.trend.falling': 'dalend',
   'weather.trend.stable': 'stabiel',

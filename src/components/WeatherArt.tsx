@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LottieView, { type AnimationObject } from 'lottie-react-native';
 import { WeatherGlyph } from './WeatherGlyph';
 import { artKeyForIcon, type ArtKey } from '../core/weatherArt';
 import { recolorLottieColors, type ColorMap } from '../core/lottieRecolor';
+import { setCondition } from '../core/conditionStore';
 import type { Palette } from '../theme/tokens';
 
-type Props = { code: string; isDay: boolean; size: number; colors: Palette; playing?: boolean };
+type Props = { code: string; isDay: boolean; size: number; colors: Palette; playing?: boolean; publish?: boolean };
 
 // Statische asset-map (Metro-veilig: geen dynamische requires).
 // Let op: Metro geeft JSON-requires direct het object (geen .default-wrapper).
@@ -54,9 +55,15 @@ const recoloredFor = (key: ArtKey, colors: Palette): unknown => {
 
 // De levende weerkunst: Lottie per conditie, gerecolored naar het palet.
 // playing=false toont frame 0 (voorspelrijen: consistente stijl, geen 5× loop).
-export const WeatherArt = ({ code, isDay, size, colors, playing = true }: Props) => {
-  // Faalstatus per asset-key (geen effect nodig): een kapot asset degradt naar
-  // het platte glyph, een andere conditie probeert het gewoon opnieuw.
+export const WeatherArt = ({ code, isDay, size, colors, playing = true, publish = false }: Props) => {
+  // Publiceren: de hero meldt de actuele conditie aan de store (o.a. voor het
+  // tab-icoon). Een rij-kunst publiceert niet — dat zijn toekomstige dagen.
+  useEffect(() => {
+    if (publish) setCondition(code, isDay);
+  }, [publish, code, isDay]);
+
+  // Faalstatus per asset-key: een kapot asset degradt naar het platte glyph,
+  // een andere conditie probeert het gewoon opnieuw.
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const artKey = artKeyForIcon(code, isDay);
 

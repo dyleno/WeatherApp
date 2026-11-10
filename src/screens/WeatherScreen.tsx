@@ -201,7 +201,7 @@ export const WeatherScreen = () => {
           <Text style={styles.degree}>°</Text>
         </Text>
         <Animated.View key={`${snapshot.current.icon}-${snapshot.current.isDay}`} entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)}>
-          <WeatherArt code={snapshot.current.icon} isDay={snapshot.current.isDay} size={112} colors={palette} />
+          <WeatherArt code={snapshot.current.icon} isDay={snapshot.current.isDay} size={112} colors={palette} publish />
         </Animated.View>
       </View>
 
