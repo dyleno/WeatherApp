@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { WeatherGlyph } from './WeatherGlyph';
 import { formatTemp } from '../core/temperature';
 import { serif, type Palette } from '../theme/tokens';
@@ -13,10 +14,21 @@ type Props = {
   tempUnit: TempUnit;
   colors: Palette;
   showDivider?: boolean;
+  enterDelay?: number;
 };
 
-export const ForecastRow = ({ dayLabel, icon, isDay, minC, maxC, tempUnit, colors, showDivider = true }: Props) => (
-  <View>
+export const ForecastRow = ({
+  dayLabel,
+  icon,
+  isDay,
+  minC,
+  maxC,
+  tempUnit,
+  colors,
+  showDivider = true,
+  enterDelay = 0,
+}: Props) => (
+  <Animated.View entering={FadeInDown.delay(enterDelay).duration(380)}>
     {showDivider ? <View style={[styles.divider, { backgroundColor: colors.panelBorder }]} /> : null}
     <View style={styles.row}>
       <Text style={[styles.day, { color: colors.text }]}>{dayLabel}</Text>
@@ -28,7 +40,7 @@ export const ForecastRow = ({ dayLabel, icon, isDay, minC, maxC, tempUnit, color
         <Text style={[styles.max, { color: colors.text }]}>{formatTemp(maxC, tempUnit)}</Text>
       </View>
     </View>
-  </View>
+  </Animated.View>
 );
 
 const styles = StyleSheet.create({

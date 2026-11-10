@@ -1,16 +1,29 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
+import { PressableScale } from './PressableScale';
 import type { Palette } from '../theme/tokens';
 
-type Props = { text: string; colors: Palette };
+type Props = { text: string; colors: Palette; onPress?: () => void };
 
-export const Banner = ({ text, colors }: Props) => (
-  <View
-    style={[styles.banner, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}
-  >
-    <View style={[styles.bar, { backgroundColor: colors.accent }]} />
-    <Text style={[styles.text, { color: colors.accent }]}>{text}</Text>
-  </View>
-);
+export const Banner = ({ text, colors, onPress }: Props) => {
+  const content = (
+    <View style={[styles.banner, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}>
+      <View style={[styles.bar, { backgroundColor: colors.accent }]} />
+      <Text style={[styles.text, { color: colors.accent }]}>{text}</Text>
+      {onPress ? (
+        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.accent} style={styles.chevron} />
+      ) : null}
+    </View>
+  );
+
+  if (!onPress) return content;
+
+  return (
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={text} scaleTo={0.98}>
+      {content}
+    </PressableScale>
+  );
+};
 
 const styles = StyleSheet.create({
   banner: {
@@ -21,5 +34,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   bar: { width: 3, alignSelf: 'stretch' },
-  text: { flex: 1, fontSize: 13, lineHeight: 18, paddingVertical: 10, paddingHorizontal: 12 },
+  text: { flex: 1, fontSize: 13, lineHeight: 18, paddingVertical: 10, paddingLeft: 12, paddingRight: 4 },
+  chevron: { marginRight: 10 },
 });

@@ -26,9 +26,10 @@ export const SelectGrid = <T extends string>({ options, value, onChange, colors,
           onPress={() => onChange(option.value)}
           accessibilityRole="button"
           accessibilityState={{ selected }}
-          style={[
+          style={({ pressed }) => [
             styles.cell,
             { width: `${100 / columns}%` },
+            pressed && styles.cellPressed,
             column > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border },
             !isLastRow && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
             selected && { backgroundColor: colors.selected },
@@ -64,4 +65,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   label: { fontSize: 14 },
+  cellPressed: { opacity: 0.6 },
 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
+  Linking,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -9,13 +9,16 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AppHeader } from '../components/AppHeader';
 import { WeatherGlyph } from '../components/WeatherGlyph';
 import { WindArrow } from '../components/WindArrow';
 import { InfoTile } from '../components/InfoTile';
 import { Banner } from '../components/Banner';
 import { ForecastRow } from '../components/ForecastRow';
+import { PressableScale } from '../components/PressableScale';
 import { aggregateDaily } from '../core/forecast';
 import { pressureTrend } from '../core/pressure';
 import { compassPoint, windValueLabel } from '../core/wind';
@@ -32,6 +35,14 @@ import { serif } from '../theme/tokens';
 import type { WeatherSnapshot } from '../core/types';
 
 type ErrorState = { key: TranslateKey; vars?: Record<string, string> };
+type BannerState = { text: string; action?: () => void };
+
+// Gestaffelde binnenkomst: elk blok glijdt iets later naar binnen.
+// Builders buiten de component (aanrading reanimated-docs: stabiel qua referentie).
+const ENTER_HERO = FadeInDown.duration(420);
+const ENTER_BANNER = FadeInDown.delay(60).duration(420);
+const ENTER_TILES = FadeInDown.delay(120).duration(420);
+const ENTER_OUTLOOK = FadeInDown.delay(180).duration(420);
 
 export const WeatherScreen = () => {
   const { settings, t, palette } = useSettings();
@@ -128,12 +139,12 @@ export const WeatherScreen = () => {
     }
   };
 
-  const bannerText = isDemo
-    ? t('weather.demoBanner')
+  const banner: BannerState | null = isDemo
+    ? { text: t('weather.demoBanner'), action: () => router.push('/(tabs)/instellingen') }
     : error
-      ? t(error.key, error.vars)
+      ? { text: t(error.key, error.vars), action: () => void load() }
       : locationDenied
-        ? t('weather.locationBanner')
+        ? { text: t('weather.locationBanner'), action: () => void Linking.openSettings() }
         : null;
 
   if (!snapshot) {
@@ -142,18 +153,21 @@ export const WeatherScreen = () => {
         <AppHeader
           colors={palette}
           right={
-            <Pressable accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load()}>
+            <PressableScale accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load()}>
               <MaterialCommunityIcons name="refresh" size={22} color={palette.muted} />
-            </Pressable>
+            </PressableScale>
           }
         />
         <View style={styles.center}>
           {error ? (
             <View style={styles.centerInner}>
-              <Banner text={t(error.key, error.vars)} colors={palette} />
-              <Pressable style={[styles.retry, { borderColor: palette.border }]} onPress={() => void load()}>
+              <Banner text={t(error.key, error.vars)} colors={palette} onPress={() => void load()} />
+              <PressableScale
+                style={[styles.retry, { borderColor: palette.border }]}
+                onPress={() => void load()}
+              >
                 <Text style={{ color: palette.text }}>{t('weather.refresh')}</Text>
-              </Pressable>
+              </PressableScale>
             </View>
           ) : (
             <ActivityIndicator color={palette.accent} />
@@ -265,6 +279,7 @@ export const WeatherScreen = () => {
             tempUnit={settings.tempUnit}
             colors={palette}
             showDivider={index > 0}
+            enterDelay={80 + index * 60}
           />
         ))}
       </View>
@@ -276,9 +291,9 @@ export const WeatherScreen = () => {
       <AppHeader
         colors={palette}
         right={
-          <Pressable accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load()}>
+          <PressableScale accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load()}>
             <MaterialCommunityIcons name="refresh" size={22} color={palette.muted} />
-          </Pressable>
+          </PressableScale>
         }
       />
       <ScrollView
@@ -294,18 +309,28 @@ export const WeatherScreen = () => {
         {isLandscape ? (
           <View style={styles.landscapeRow}>
             <View style={styles.landscapeLeft}>
-              {hero}
-              {bannerText ? <Banner text={bannerText} colors={palette} /> : null}
-              {tiles}
+              <Animated.View entering={ENTER_HERO}>{hero}</Animated.View>
+              {banner ? (
+                <Animated.View entering={ENTER_BANNER}>
+                  <Banner text={banner.text} colors={palette} onPress={banner.action} />
+                </Animated.View>
+              ) : null}
+              <Animated.View entering={ENTER_TILES}>{tiles}</Animated.View>
             </View>
-            <View style={[styles.landscapeRight, { borderLeftColor: palette.border }]}>{outlook}</View>
+            <View style={[styles.landscapeRight, { borderLeftColor: palette.border }]}>
+              <Animated.View entering={ENTER_OUTLOOK}>{outlook}</Animated.View>
+            </View>
           </View>
         ) : (
           <>
-            {hero}
-            {bannerText ? <Banner text={bannerText} colors={palette} /> : null}
-            {tiles}
-            {outlook}
+            <Animated.View entering={ENTER_HERO}>{hero}</Animated.View>
+            {banner ? (
+              <Animated.View entering={ENTER_BANNER}>
+                <Banner text={banner.text} colors={palette} onPress={banner.action} />
+              </Animated.View>
+            ) : null}
+            <Animated.View entering={ENTER_TILES}>{tiles}</Animated.View>
+            <Animated.View entering={ENTER_OUTLOOK}>{outlook}</Animated.View>
           </>
         )}
       </ScrollView>
