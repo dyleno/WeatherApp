@@ -6,6 +6,8 @@ const { aggregateDaily } = require('../build-test/core/forecast');
 const { pressureTrend } = require('../build-test/core/pressure');
 const { formatTemp } = require('../build-test/core/temperature');
 const { glyphForIcon, humidityKey } = require('../build-test/core/conditions');
+const { recolorLottieColors } = require('../build-test/core/lottieRecolor');
+const { artKeyForIcon } = require('../build-test/core/weatherArt');
 
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
@@ -94,6 +96,39 @@ test('luchtvochtigheidslabel heeft drempels', () => {
   assert.equal(humidityKey(72), 'comfortable');
   assert.equal(humidityKey(75), 'humid');
   assert.equal(humidityKey(95), 'veryHumid');
+});
+
+test('art mapping dekt alle OWM-codes met fallback', () => {
+  assert.equal(artKeyForIcon('01d', true), 'clearDay');
+  assert.equal(artKeyForIcon('01n', false), 'clearNight');
+  assert.equal(artKeyForIcon('02d', true), 'partlyDay');
+  assert.equal(artKeyForIcon('02n', false), 'cloudy');
+  assert.equal(artKeyForIcon('04d', true), 'cloudy');
+  assert.equal(artKeyForIcon('10d', true), 'rain');
+  assert.equal(artKeyForIcon('11d', true), 'thunder');
+  assert.equal(artKeyForIcon('13n', false), 'snow');
+  assert.equal(artKeyForIcon('50d', true), 'fog');
+  assert.equal(artKeyForIcon('99x', true), 'cloudy');
+});
+
+test('lottie-recolor vervangt gekende kleuren en laat onbekende staan', () => {
+  const json = { layers: [{ shapes: [{ it: [
+    { ty: 'fl', c: { k: [0.9, 0.58, 0.36, 1] } },
+    { ty: 'fl', c: { k: [0.1, 0.2, 0.3, 1] } },
+  ] }] }] };
+  const out = recolorLottieColors(json, { '#e6945c': '#e7c46a' });
+  const [a, b] = out.layers[0].shapes[0].it;
+  const toHex = (k) => '#' + k.slice(0, 3).map((v) => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+  assert.equal(toHex(a.c.k), '#e7c46a');             // doelkleur
+  assert.equal(toHex(b.c.k), '#1a334d');             // onbekend → onveranderd
+  assert.deepEqual(json.layers[0].shapes[0].it[0].c.k, [0.9, 0.58, 0.36, 1]); // geen mutatie
+});
+
+test('lottie-recolor volgt het thema: licht vs donker levert andere kleuren', () => {
+  const json = { layers: [{ shapes: [{ it: [{ ty: 'fl', c: { k: [0.9, 0.58, 0.36, 1] } }] }] }] };
+  const dark = recolorLottieColors(json, { '#e6945c': '#e7c46a' });
+  const light = recolorLottieColors(json, { '#e6945c': '#c06b3c' });
+  assert.notDeepEqual(dark.layers[0].shapes[0].it[0].c.k, light.layers[0].shapes[0].it[0].c.k);
 });
 
 let failed = 0;
