@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { WeatherGlyph } from './WeatherGlyph';
+import { WeatherArt } from './WeatherArt';
 import { formatTemp } from '../core/temperature';
 import { sans, type as typeScale, type Palette } from '../theme/tokens';
 import type { TempUnit } from '../core/types';
@@ -33,7 +33,7 @@ export const ForecastRow = ({
     <View style={styles.row}>
       <Text style={[styles.day, { color: colors.text }]}>{dayLabel}</Text>
       <View style={styles.glyph}>
-        <WeatherGlyph code={icon} isDay={isDay} size={30} colors={colors} />
+        <WeatherArt code={icon} isDay={isDay} size={30} colors={colors} playing={false} />
       </View>
       <View style={styles.temps}>
         <Text style={[styles.min, { color: colors.muted }]}>{formatTemp(minC, tempUnit)}</Text>

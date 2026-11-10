@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import { AppHeader } from '../components/AppHeader';
-import { WeatherGlyph } from '../components/WeatherGlyph';
+import { WeatherArt } from '../components/WeatherArt';
 import { WindArrow } from '../components/WindArrow';
 import { InfoTile } from '../components/InfoTile';
 import { Banner } from '../components/Banner';
@@ -200,7 +200,9 @@ export const WeatherScreen = () => {
           {Math.round(celsiusToUnit(snapshot.current.temperatureC, settings.tempUnit))}
           <Text style={styles.degree}>°</Text>
         </Text>
-        <WeatherGlyph code={snapshot.current.icon} isDay={snapshot.current.isDay} size={112} colors={palette} />
+        <Animated.View key={`${snapshot.current.icon}-${snapshot.current.isDay}`} entering={FadeIn.duration(400)} exiting={FadeOut.duration(200)}>
+          <WeatherArt code={snapshot.current.icon} isDay={snapshot.current.isDay} size={112} colors={palette} />
+        </Animated.View>
       </View>
 
       <Text style={[styles.condition, { color: palette.text }]}>{snapshot.current.description}</Text>
