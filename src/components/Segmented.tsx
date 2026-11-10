@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { sans, type Palette } from '../theme/tokens';
 
 type Option<T extends string> = { value: T; label: string };
@@ -12,32 +12,28 @@ type Props<T extends string> = {
   colors: Palette;
 };
 
-const THUMB_SPRING = { damping: 18, stiffness: 240 };
-
+// Selectie zonder schuifbeweging: de highlight verschijnt op de nieuwe plek
+// (fade-in-place via key-remount) en de oude fade weg. Rustig, geen slide.
 export const Segmented = <T extends string>({ options, value, onChange, colors }: Props<T>) => {
   const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
   const [rowWidth, setRowWidth] = useState(0);
   const cellWidth = options.length > 0 ? rowWidth / options.length : 0;
-
-  const position = useSharedValue(selectedIndex);
-
-  useEffect(() => {
-    position.value = withSpring(selectedIndex, THUMB_SPRING);
-  }, [position, selectedIndex]);
-
-  const thumbStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: position.value * cellWidth }],
-  }));
 
   return (
     <View
       style={[styles.row, { borderColor: colors.border }]}
       onLayout={(event) => setRowWidth(event.nativeEvent.layout.width)}
     >
-      {rowWidth > 0 ? (
+      {rowWidth > 0 && cellWidth > 0 ? (
         <Animated.View
+          key={value}
           pointerEvents="none"
-          style={[styles.thumb, { width: cellWidth, backgroundColor: colors.selected }, thumbStyle]}
+          entering={FadeIn.duration(150)}
+          exiting={FadeOut.duration(150)}
+          style={[
+            styles.thumb,
+            { width: cellWidth, left: selectedIndex * cellWidth, backgroundColor: colors.selected },
+          ]}
         />
       ) : null}
       {options.map((option) => {
@@ -68,7 +64,7 @@ export const Segmented = <T extends string>({ options, value, onChange, colors }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
-  thumb: { position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: 7 },
+  thumb: { position: 'absolute', top: 0, bottom: 0, borderRadius: 7 },
   cell: { flex: 1, height: 46, alignItems: 'center', justifyContent: 'center' },
   cellPressed: { opacity: 0.6 },
   label: { fontSize: 14, fontFamily: sans('medium') },
