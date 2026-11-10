@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { serif, type Palette } from '../theme/tokens';
+import { sans, type Palette } from '../theme/tokens';
 
 type Option<T extends string> = { value: T; label: string };
 
@@ -54,7 +54,7 @@ export const Segmented = <T extends string>({ options, value, onChange, colors }
               style={[
                 styles.label,
                 { color: selected ? colors.selectedText : colors.muted },
-                selected && { fontFamily: serif('semibold') },
+                selected && { fontFamily: sans('semibold') },
               ]}
             >
               {option.label}
@@ -71,5 +71,5 @@ const styles = StyleSheet.create({
   thumb: { position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: 7 },
   cell: { flex: 1, height: 46, alignItems: 'center', justifyContent: 'center' },
   cellPressed: { opacity: 0.6 },
-  label: { fontSize: 14 },
+  label: { fontSize: 14, fontFamily: sans('medium') },
 });

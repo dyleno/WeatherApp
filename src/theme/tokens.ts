@@ -51,3 +51,34 @@ export const serif = (weight: SerifWeight = 'medium'): string => {
       return 'PlayfairDisplay_500Medium';
   }
 };
+
+export type SansWeight = 'regular' | 'medium' | 'semibold' | 'bold';
+
+export const sans = (weight: SansWeight = 'regular'): string => {
+  switch (weight) {
+    case 'bold':
+      return 'Inter_700Bold';
+    case 'semibold':
+      return 'Inter_600SemiBold';
+    case 'medium':
+      return 'Inter_500Medium';
+    case 'regular':
+      return 'Inter_400Regular';
+  }
+};
+
+// Type-schaal: serif = display (hero, titels, conditie, dagnamen),
+// Inter = labels, waarden, body, knoppen. Eén bron voor het hele letterbeeld.
+export const type = {
+  display: { fontSize: 96, lineHeight: 104, fontFamily: serif('medium') },
+  screenTitle: { fontSize: 40, lineHeight: 46, fontFamily: serif('semibold') },
+  sectionTitle: { fontSize: 26, fontFamily: serif('semibold') },
+  condition: { fontSize: 22, fontFamily: serif('medium') },
+  cardTitle: { fontSize: 17, fontFamily: sans('semibold') },
+  dataValue: { fontSize: 21, fontFamily: sans('semibold') },
+  body: { fontSize: 15, lineHeight: 22, fontFamily: sans('regular') },
+  bodySmall: { fontSize: 13, lineHeight: 19, fontFamily: sans('regular') },
+  label: { fontSize: 12, fontFamily: sans('regular') },
+  eyebrow: { fontSize: 11, letterSpacing: 1.5, fontFamily: sans('bold') },
+  dayName: { fontSize: 15, fontFamily: serif('medium') },
+} as const;

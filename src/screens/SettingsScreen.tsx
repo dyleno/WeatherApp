@@ -14,7 +14,7 @@ import { Segmented } from '../components/Segmented';
 import { SelectGrid } from '../components/SelectGrid';
 import { Divider, SettingSection } from '../components/SettingSection';
 import { useSettings } from '../state/SettingsContext';
-import { serif } from '../theme/tokens';
+import { type as typeScale } from '../theme/tokens';
 
 export const SettingsScreen = () => {
   const { settings, update, t, palette } = useSettings();
@@ -167,9 +167,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
   content: { padding: 20, paddingBottom: 40, gap: 20 },
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
-  title: { fontSize: 40, fontFamily: serif('semibold'), marginTop: 4 },
-  subtitle: { fontSize: 14, marginTop: 6 },
+  eyebrow: typeScale.eyebrow,
+  title: typeScale.screenTitle,
+  subtitle: { ...typeScale.body, marginTop: 6 },
   divider: { marginTop: 4 },
   field: {
     flexDirection: 'row',
@@ -180,5 +180,5 @@ const styles = StyleSheet.create({
     height: 46,
     paddingHorizontal: 12,
   },
-  input: { flex: 1, fontSize: 15, padding: 0 },
+  input: { ...typeScale.body, flex: 1, padding: 0 },
 });

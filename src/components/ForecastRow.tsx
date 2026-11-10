@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { WeatherGlyph } from './WeatherGlyph';
 import { formatTemp } from '../core/temperature';
-import { serif, type Palette } from '../theme/tokens';
+import { sans, type as typeScale, type Palette } from '../theme/tokens';
 import type { TempUnit } from '../core/types';
 
 type Props = {
@@ -46,9 +46,9 @@ export const ForecastRow = ({
 const styles = StyleSheet.create({
   divider: { height: 1 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13 },
-  day: { width: 78, fontSize: 15, fontFamily: serif('medium') },
+  day: { ...typeScale.dayName, width: 78 },
   glyph: { flex: 1, alignItems: 'center' },
   temps: { flexDirection: 'row', gap: 10, minWidth: 64, justifyContent: 'flex-end' },
-  min: { fontSize: 15 },
-  max: { fontSize: 15, fontWeight: '700' },
+  min: typeScale.body,
+  max: { ...typeScale.body, fontFamily: sans('semibold') },
 });

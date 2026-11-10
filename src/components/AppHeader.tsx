@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ReactNode } from 'react';
 import { LogoMark } from './LogoMark';
+import { type as typeScale } from '../theme/tokens';
 import type { Palette } from '../theme/tokens';
 
 type Props = { colors: Palette; right?: ReactNode };
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   titleBlock: { marginLeft: 10 },
-  title: { fontSize: 17, fontWeight: '700' },
-  subtitle: { fontSize: 12, marginTop: 1 },
+  title: typeScale.cardTitle,
+  subtitle: { ...typeScale.label, marginTop: 1 },
   right: { marginLeft: 'auto' },
 });

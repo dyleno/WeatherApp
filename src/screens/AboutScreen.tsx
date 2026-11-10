@@ -5,7 +5,7 @@ import { AppHeader } from '../components/AppHeader';
 import { LogoMark } from '../components/LogoMark';
 import { Divider } from '../components/SettingSection';
 import { useSettings } from '../state/SettingsContext';
-import { serif } from '../theme/tokens';
+import { sans, type as typeScale } from '../theme/tokens';
 
 export const AboutScreen = () => {
   const { t, palette } = useSettings();
@@ -65,14 +65,14 @@ export const AboutScreen = () => {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 40, gap: 8 },
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginTop: 16 },
-  title: { fontSize: 38, lineHeight: 44, fontFamily: serif('semibold'), marginTop: 4 },
-  subtitle: { fontSize: 15, lineHeight: 22, marginTop: 6 },
-  version: { fontSize: 12, marginTop: 10 },
+  eyebrow: { ...typeScale.eyebrow, marginTop: 16 },
+  title: { ...typeScale.screenTitle, marginTop: 4 },
+  subtitle: { ...typeScale.body, marginTop: 6 },
+  version: { ...typeScale.label, marginTop: 10 },
   divider: { marginTop: 18 },
   row: { flexDirection: 'row', gap: 14, marginTop: 18, marginBottom: 6 },
   rowText: { flex: 1, gap: 3 },
-  rowTitle: { fontSize: 15, fontWeight: '700' },
-  rowSub: { fontSize: 13, lineHeight: 19 },
-  footer: { fontSize: 12, marginTop: 4 },
+  rowTitle: { fontSize: 15, fontFamily: sans('semibold') },
+  rowSub: typeScale.bodySmall,
+  footer: typeScale.label,
 });

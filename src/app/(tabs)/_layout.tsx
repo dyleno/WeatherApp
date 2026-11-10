@@ -4,6 +4,7 @@ import { StyleSheet, View, type ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSettings } from '../../state/SettingsContext';
+import { sans } from '../../theme/tokens';
 import type { Palette } from '../../theme/tokens';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -56,7 +57,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: palette.text,
         tabBarInactiveTintColor: palette.muted,
         tabBarStyle: { backgroundColor: palette.surface, borderTopColor: palette.border },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: sans('medium') },
         tabBarHideOnKeyboard: true,
       }}
     >

@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { sans, type as typeScale } from '../theme/tokens';
 import type { ReactNode } from 'react';
 import type { Palette } from '../theme/tokens';
 
@@ -21,6 +22,6 @@ export const SettingSection = ({ title, hint, colors, children }: Props) => (
 const styles = StyleSheet.create({
   divider: { height: 1 },
   heading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 },
-  title: { fontSize: 15, fontWeight: '700' },
-  hint: { fontSize: 12 },
+  title: { fontSize: 15, fontFamily: sans('semibold') },
+  hint: typeScale.label,
 });

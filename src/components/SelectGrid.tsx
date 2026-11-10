@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { serif, type Palette } from '../theme/tokens';
+import { sans, type Palette } from '../theme/tokens';
 
 type Option<T extends string> = { value: T; label: string };
 
@@ -39,7 +39,7 @@ export const SelectGrid = <T extends string>({ options, value, onChange, colors,
             style={[
               styles.label,
               { color: selected ? colors.selectedText : colors.muted },
-              selected && { fontFamily: serif('semibold') },
+              selected && { fontFamily: sans('semibold') },
             ]}
           >
             {option.label}
@@ -64,6 +64,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  label: { fontSize: 14 },
+  label: { fontSize: 14, fontFamily: sans('medium') },
   cellPressed: { opacity: 0.6 },
 });

@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { PressableScale } from './PressableScale';
+import { type as typeScale } from '../theme/tokens';
 import type { Palette } from '../theme/tokens';
 
 type Props = { text: string; colors: Palette; onPress?: () => void };
@@ -34,6 +35,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   bar: { width: 3, alignSelf: 'stretch' },
-  text: { flex: 1, fontSize: 13, lineHeight: 18, paddingVertical: 10, paddingLeft: 12, paddingRight: 4 },
+  text: { ...typeScale.bodySmall, flex: 1, paddingVertical: 10, paddingLeft: 12, paddingRight: 4 },
   chevron: { marginRight: 10 },
 });

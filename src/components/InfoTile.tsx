@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
 import type { Palette } from '../theme/tokens';
+import { type as typeScale } from '../theme/tokens';
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -30,7 +31,7 @@ export const InfoTile = ({ icon, label, value, sub, colors, isLast = false }: Pr
 
 const styles = StyleSheet.create({
   tile: { flex: 1, paddingVertical: 14, paddingHorizontal: 14, gap: 4 },
-  label: { fontSize: 12 },
-  value: { fontSize: 21, fontWeight: '700' },
+  label: typeScale.label,
+  value: typeScale.dataValue,
   sub: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });

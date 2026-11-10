@@ -31,7 +31,7 @@ import { requestCurrentLocation, resolveDefaultCity } from '../services/location
 import { OWM_API_KEY } from '../config';
 import { useSettings } from '../state/SettingsContext';
 import { localeOf, type TranslateKey } from '../i18n/translations';
-import { serif } from '../theme/tokens';
+import { type as typeScale } from '../theme/tokens';
 import type { WeatherSnapshot } from '../core/types';
 
 type ErrorState = { key: TranslateKey; vars?: Record<string, string> };
@@ -166,7 +166,7 @@ export const WeatherScreen = () => {
                 style={[styles.retry, { borderColor: palette.border }]}
                 onPress={() => void load()}
               >
-                <Text style={{ color: palette.text }}>{t('weather.refresh')}</Text>
+                <Text style={[typeScale.body, { color: palette.text }]}>{t('weather.refresh')}</Text>
               </PressableScale>
             </View>
           ) : (
@@ -350,14 +350,14 @@ const styles = StyleSheet.create({
   landscapeRight: { flex: 1, borderLeftWidth: 1, paddingLeft: 20 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   locationText: { gap: 1 },
-  placeName: { fontSize: 20, fontWeight: '700' },
-  placeSub: { fontSize: 12 },
-  dateLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginTop: 16 },
+  placeName: typeScale.cardTitle,
+  placeSub: typeScale.label,
+  dateLabel: { ...typeScale.eyebrow, marginTop: 16 },
   tempRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4 },
-  temp: { fontSize: 96, lineHeight: 104, fontFamily: serif('medium') },
+  temp: { ...typeScale.display },
   degree: { fontSize: 44 },
-  condition: { fontSize: 22, fontFamily: serif('medium'), marginTop: 4 },
-  feelsLike: { fontSize: 14, marginTop: 2 },
+  condition: { ...typeScale.condition, marginTop: 4 },
+  feelsLike: { ...typeScale.bodySmall, marginTop: 2 },
   tiles: {
     flexDirection: 'row',
     borderWidth: 1,
@@ -372,9 +372,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   outlookHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
+  eyebrow: typeScale.eyebrow,
   demoBadge: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3 },
-  demoBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
-  outlookTitle: { fontSize: 26, fontFamily: serif('semibold'), marginTop: 4 },
+  demoBadgeText: { ...typeScale.eyebrow, fontSize: 10, letterSpacing: 1 },
+  outlookTitle: { ...typeScale.sectionTitle, marginTop: 4 },
   outlookRows: { marginTop: 6 },
 });
