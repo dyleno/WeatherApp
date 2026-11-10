@@ -30,6 +30,21 @@ const RootNavigator = () => {
   );
 };
 
+// Eerste frame wacht op fonts ÉN opgeslagen instellingen: de splash dekt de
+// laadtijd, zodat nooit een frame met defaults (NL/licht) flitst voor een
+// opgeslagen EN/donker-configuratie.
+const AppReadyGate = ({ fontsLoaded }: { fontsLoaded: boolean }) => {
+  const { isLoaded } = useSettings();
+  const ready = fontsLoaded && isLoaded;
+
+  useEffect(() => {
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
+  return <RootNavigator />;
+};
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_500Medium,
@@ -41,15 +56,9 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded) void SplashScreen.hideAsync();
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) return null;
-
   return (
     <SettingsProvider>
-      <RootNavigator />
+      <AppReadyGate fontsLoaded={fontsLoaded} />
     </SettingsProvider>
   );
 }

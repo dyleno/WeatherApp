@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '../services/settingsStore';
+import { withTimeout } from '../core/async';
 import { interpolate, translations, type TranslateFn, type TranslateKey } from '../i18n/translations';
 import { palette, type Palette } from '../theme/tokens';
 import type { Settings } from '../core/types';
@@ -11,6 +12,7 @@ type SettingsContextValue = {
   t: TranslateFn;
   palette: Palette;
   isDark: boolean;
+  isLoaded: boolean;
 };
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -23,12 +25,20 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let active = true;
-    loadSettings().then((stored) => {
-      if (!active) return;
-      loadedRef.current = true;
-      setSettings(stored);
-      setIsLoaded(true);
-    });
+    // Launch mag nooit op de splash blijven hangen: na 1500 ms vallen we terug
+    // op defaults (storage-fout of trage read kan de app niet blokkeren).
+    withTimeout(loadSettings(), 1500)
+      .then((stored) => {
+        if (!active) return;
+        loadedRef.current = true;
+        setSettings(stored);
+        setIsLoaded(true);
+      })
+      .catch(() => {
+        if (!active) return;
+        loadedRef.current = true;
+        setIsLoaded(true);
+      });
     return () => {
       active = false;
     };
@@ -52,8 +62,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       t: (key, vars) => interpolate(translations[settings.language][key] ?? key, vars ?? {}),
       palette: isDark ? palette.dark : palette.light,
       isDark,
+      isLoaded,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [settings, isDark, isLoaded],
   );
 

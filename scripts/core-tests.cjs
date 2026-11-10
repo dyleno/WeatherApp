@@ -8,6 +8,7 @@ const { formatTemp } = require('../build-test/core/temperature');
 const { glyphForIcon, humidityKey } = require('../build-test/core/conditions');
 const { recolorLottieColors } = require('../build-test/core/lottieRecolor');
 const { artKeyForIcon } = require('../build-test/core/weatherArt');
+const { withTimeout } = require('../build-test/core/async');
 
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
@@ -131,19 +132,29 @@ test('lottie-recolor volgt het thema: licht vs donker levert andere kleuren', ()
   assert.notDeepEqual(dark.layers[0].shapes[0].it[0].c.k, light.layers[0].shapes[0].it[0].c.k);
 });
 
-let failed = 0;
-for (const [name, fn] of tests) {
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-  } catch (error) {
-    failed += 1;
-    console.error(`  ✗ ${name}\n    ${error.message}`);
-  }
-}
+test('withTimeout geeft de onderliggende waarde door vóór de deadline', async () => {
+  assert.equal(await withTimeout(Promise.resolve('x'), 100), 'x');
+});
 
-if (failed > 0) {
-  console.error(`\n${failed} van ${tests.length} kern-tests gefaald`);
-  process.exit(1);
-}
-console.log(`\nAlle ${tests.length} kern-tests geslaagd`);
+test('withTimeout reject op de deadline bij een nooit-resolvende promise', async () => {
+  await assert.rejects(withTimeout(new Promise(() => {}), 10), /timeout/);
+});
+
+let failed = 0;
+(async () => {
+  for (const [name, fn] of tests) {
+    try {
+      await fn();
+      console.log(`  ✓ ${name}`);
+    } catch (error) {
+      failed += 1;
+      console.error(`  ✗ ${name}\n    ${error.message}`);
+    }
+  }
+
+  if (failed > 0) {
+    console.error(`\n${failed} van ${tests.length} kern-tests gefaald`);
+    process.exit(1);
+  }
+  console.log(`\nAlle ${tests.length} kern-tests geslaagd`);
+})();
