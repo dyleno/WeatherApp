@@ -53,7 +53,7 @@ export const SettingsScreen = () => {
     <View style={[styles.root, { backgroundColor: palette.bg }]}>
       <AppHeader
         colors={palette}
-        right={<Text style={{ color: palette.muted, fontSize: 13 }}>{t('settings.title')}</Text>}
+        right={<Text style={[typeScale.bodySmall, { color: palette.muted }]}>{t('settings.title')}</Text>}
       />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -143,7 +143,7 @@ export const SettingsScreen = () => {
                 returnKeyType="done"
               />
             </View>
-            <Text style={{ color: palette.muted, fontSize: 12, marginTop: 8 }}>{t('settings.apiKeyHelper')}</Text>
+            <Text style={[typeScale.label, { color: palette.muted, marginTop: 8 }]}>{t('settings.apiKeyHelper')}</Text>
           </SettingSection>
 
           <SettingSection title={t('settings.language')} colors={palette}>

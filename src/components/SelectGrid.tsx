@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { sans, type Palette } from '../theme/tokens';
+import { type as typeScale, type Palette } from '../theme/tokens';
 
 type Option<T extends string> = { value: T; label: string };
 
@@ -106,6 +106,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  label: { fontSize: 14, fontFamily: sans('medium') },
+  label: typeScale.control,
   cellPressed: { opacity: 0.6 },
 });

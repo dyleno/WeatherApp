@@ -224,7 +224,7 @@ export const WeatherScreen = () => {
         sub={
           <View style={styles.windSub}>
             <WindArrow deg={snapshot.current.windDeg} color={palette.accent} />
-            <Text style={{ color: palette.muted, fontSize: 12 }}>
+            <Text style={[typeScale.label, { color: palette.muted }]}>
               {t('weather.windFrom', { dir: compassPoint(snapshot.current.windDeg, settings.language) })}
             </Text>
           </View>
@@ -236,7 +236,7 @@ export const WeatherScreen = () => {
         value={`${Math.round(snapshot.current.pressureHpa)}`}
         colors={palette}
         sub={
-          <Text style={{ color: palette.muted, fontSize: 12 }}>
+          <Text style={[typeScale.label, { color: palette.muted }]}>
             {`${t('weather.pressureUnit')} · ${t(`weather.trend.${snapshot.trend}`)}`}
           </Text>
         }
@@ -248,7 +248,7 @@ export const WeatherScreen = () => {
         colors={palette}
         isLast
         sub={
-          <Text style={{ color: palette.muted, fontSize: 12 }}>
+          <Text style={[typeScale.label, { color: palette.muted }]}>
             {t(`weather.humidityLabel.${humidityKey(snapshot.current.humidityPct)}`)}
           </Text>
         }

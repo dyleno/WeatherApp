@@ -15,7 +15,7 @@ export const AboutScreen = () => {
     <View style={[styles.root, { backgroundColor: palette.bg }]}>
       <AppHeader
         colors={palette}
-        right={<Text style={{ color: palette.muted, fontSize: 13 }}>{t('about.eyebrow')}</Text>}
+        right={<Text style={[typeScale.bodySmall, { color: palette.muted }]}>{t('about.eyebrow')}</Text>}
       />
       <ScrollView contentContainerStyle={styles.content}>
         <LogoMark size={72} teal={palette.teal} accent={palette.accent} />

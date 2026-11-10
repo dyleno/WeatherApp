@@ -79,6 +79,7 @@ export const type = {
   body: { fontSize: 15, lineHeight: 22, fontFamily: sans('regular') },
   bodySmall: { fontSize: 13, lineHeight: 19, fontFamily: sans('regular') },
   label: { fontSize: 12, fontFamily: sans('regular') },
+  control: { fontSize: 14, fontFamily: sans('medium') },
   eyebrow: { fontSize: 11, letterSpacing: 1.5, fontFamily: sans('bold') },
   dayName: { fontSize: 15, fontFamily: serif('medium') },
 } as const;

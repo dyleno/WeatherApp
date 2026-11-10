@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { sans, type Palette } from '../theme/tokens';
+import { type as typeScale, type Palette } from '../theme/tokens';
 
 type Option<T extends string> = { value: T; label: string };
 
@@ -67,5 +67,5 @@ const styles = StyleSheet.create({
   thumb: { position: 'absolute', top: 0, bottom: 0, borderRadius: 7 },
   cell: { flex: 1, height: 46, alignItems: 'center', justifyContent: 'center' },
   cellPressed: { opacity: 0.6 },
-  label: { fontSize: 14, fontFamily: sans('medium') },
+  label: typeScale.control,
 });
