@@ -49,8 +49,8 @@ export const Segmented = <T extends string>({ options, value, onChange, colors }
             <Text
               style={[
                 styles.label,
+                // Gelijk gewicht in elke staat: een fontwissel verspringt de tekstbreedte in de cel.
                 { color: selected ? colors.selectedText : colors.muted },
-                selected && { fontFamily: sans('semibold') },
               ]}
             >
               {option.label}

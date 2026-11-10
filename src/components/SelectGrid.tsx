@@ -54,7 +54,13 @@ const GridCell = <T extends string>({ option, selected, colors, onSelect, column
       ]}
     >
       <Animated.View style={[StyleSheet.absoluteFill, backgroundStyle]} pointerEvents="none" />
-      <Animated.Text style={[styles.label, labelStyle, selected && { fontFamily: sans('semibold') }]}>
+      <Animated.Text
+        style={[
+          styles.label,
+          labelStyle,
+          // Gelijk gewicht in elke staat: een fontwissel verspringt de tekstbreedte in de cel.
+        ]}
+      >
         {option.label}
       </Animated.Text>
       {selected ? (
