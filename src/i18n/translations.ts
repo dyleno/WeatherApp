@@ -49,6 +49,7 @@ const nl = {
   'settings.optional': 'optioneel',
   'settings.apiKeyPlaceholder': 'Plak je API-key hier',
   'settings.apiKeyHelper': 'Zonder key draait de app op demo-data. Met key haal je live weer op.',
+  'settings.apiKeySaved': 'Opgeslagen ✓',
   'settings.language': 'Taal',
 
   'about.eyebrow': 'Over deze app',
@@ -114,6 +115,7 @@ const en: Record<keyof typeof nl, string> = {
   'settings.optional': 'optional',
   'settings.apiKeyPlaceholder': 'Paste your API key here',
   'settings.apiKeyHelper': 'Without a key the app runs on demo data. With a key you get live weather.',
+  'settings.apiKeySaved': 'Saved ✓',
   'settings.language': 'Language',
 
   'about.eyebrow': 'About this app',

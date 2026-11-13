@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -44,10 +44,41 @@ export const SettingsScreen = () => {
     update({ defaultLocation: trimmed });
   };
 
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  // Eén plek die de key daadwerkelijk wegschrijft; zowel de blur-commit als de
+  // debounce lopen hier doorheen.
+  const applyApiKey = useCallback(
+    (value: string) => {
+      if (value === settings.apiKey) return;
+      update({ apiKey: value });
+      setSavedFlash(true);
+    },
+    [settings.apiKey, update],
+  );
+
   const commitApiKey = () => {
-    const trimmed = apiKeyDraft.trim();
-    if (trimmed !== settings.apiKey) update({ apiKey: trimmed });
+    applyApiKey(apiKeyDraft.trim());
   };
+
+  // Auto-commit ~800 ms na de laatste toetsaanslag: de key blijft bewaard ook
+  // als de app wordt afgesloten zonder het veld te verlaten.
+  useEffect(() => {
+    if (apiKeyDraft === settings.apiKey) return;
+    const trimmed = apiKeyDraft.trim();
+    const timer = setTimeout(() => applyApiKey(trimmed), 800);
+    return () => clearTimeout(timer);
+  }, [apiKeyDraft, settings.apiKey, applyApiKey]);
+
+  // Flash: zichtbaar alleen zolang de draft gelijk is aan de opgeslagen key
+  // (gebruiker typt weer → afgeleid weg, geen setState in effect), en vanzelf
+  // na 2,5 s. De timer herstart bij een nieuwe commit (settings.apiKey).
+  const showSavedFlash = savedFlash && apiKeyDraft === settings.apiKey;
+  useEffect(() => {
+    if (!savedFlash) return;
+    const timer = setTimeout(() => setSavedFlash(false), 2500);
+    return () => clearTimeout(timer);
+  }, [savedFlash, settings.apiKey]);
 
   return (
     <View style={[styles.root, { backgroundColor: palette.bg }]}>
@@ -143,7 +174,15 @@ export const SettingsScreen = () => {
                 returnKeyType="done"
               />
             </View>
-            <Text style={[typeScale.label, { color: palette.muted, marginTop: 8 }]}>{t('settings.apiKeyHelper')}</Text>
+            {showSavedFlash ? (
+              <Text style={[typeScale.label, { color: palette.accent, marginTop: 8 }]}>
+                {t('settings.apiKeySaved')}
+              </Text>
+            ) : (
+              <Text style={[typeScale.label, { color: palette.muted, marginTop: 8 }]}>
+                {t('settings.apiKeyHelper')}
+              </Text>
+            )}
           </SettingSection>
 
           <SettingSection title={t('settings.language')} colors={palette}>
