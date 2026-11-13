@@ -10,6 +10,7 @@ const { recolorLottieColors } = require('../build-test/core/lottieRecolor');
 const { artKeyForIcon } = require('../build-test/core/weatherArt');
 const { getCondition, setCondition, subscribeCondition } = require('../build-test/core/conditionStore');
 const { withTimeout } = require('../build-test/core/async');
+const { mergeStoredSettings } = require('../build-test/core/settings');
 
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
@@ -158,6 +159,21 @@ test('conditie-store: publiceert en notificeert abonnees, niet bij zelfde waarde
     { icon: '01n', isDay: false },
   ]);
   assert.deepEqual(getCondition(), { icon: '03d', isDay: true });
+});
+
+test('mergeStoredSettings bewaart opgeslagen key als de sessie defaults niet raakt', () => {
+  const defaults = { theme: 'system', apiKey: '' };
+  const stored = { theme: 'light', apiKey: 'abc123' };
+  assert.deepEqual(mergeStoredSettings(stored, defaults, defaults), stored);
+});
+
+test('mergeStoredSettings laat sessiewijzigingen winnen', () => {
+  const defaults = { theme: 'system', apiKey: '' };
+  const stored = { theme: 'light', apiKey: 'abc123' };
+  assert.deepEqual(mergeStoredSettings(stored, { theme: 'dark', apiKey: '' }, defaults), {
+    theme: 'dark',
+    apiKey: 'abc123',
+  });
 });
 
 let failed = 0;
