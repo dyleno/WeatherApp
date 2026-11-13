@@ -63,3 +63,18 @@ key survives restarts.
 - `npm test` (core tests; add coverage for the debounce helper)
 - Manual: paste key → kill app within 800 ms → relaunch → key present; `Saved ✓`
   appears and clears.
+
+## Review amendments (2026-11-13, after fresh-context code review)
+
+- **Background flush added (was the rejected alternative):** the ~800 ms debounce
+  alone leaves a kill-window — a hard process death inside the window loses the
+  draft. The screen now also commits the draft on `AppState` → background
+  (listener lives only while the draft diverges). Residual window: a kill with
+  *no* background event at all (crash/jettison within <800 ms of the last
+  keystroke); accepted — costs one retype, self-healing.
+- **Launch recovery made bounded:** the one-shot retry gets the same 1500 ms
+  deadline (extracted to `recoverSettings` in `src/core/settings.ts`, node-tested)
+  so the splash can never hang indefinitely; a late-landing read still recovers
+  stored values via `mergeStoredSettings` (session edits win).
+- Third merge leg pinned by test (session key differing from both stored and
+  defaults).

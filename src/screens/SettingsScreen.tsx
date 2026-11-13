@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  AppState,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -61,13 +62,22 @@ export const SettingsScreen = () => {
     applyApiKey(apiKeyDraft.trim());
   };
 
-  // Auto-commit ~800 ms na de laatste toetsaanslag: de key blijft bewaard ook
-  // als de app wordt afgesloten zonder het veld te verlaten.
+  // Auto-commit ~800 ms na de laatste toetsaanslag. Gaat de app naar de
+  // achtergrond (app-wisselaar, slot, swipe-weg), schrijf dan vóór het
+  // kill-moment weg: het resterende debounce-interval overleeft een procesdood
+  // niet, het background-event wel. De listener leeft alleen zolang de draft
+  // afwijkt van wat er staat.
   useEffect(() => {
     if (apiKeyDraft === settings.apiKey) return;
-    const trimmed = apiKeyDraft.trim();
-    const timer = setTimeout(() => applyApiKey(trimmed), 800);
-    return () => clearTimeout(timer);
+    const commit = () => applyApiKey(apiKeyDraft.trim());
+    const timer = setTimeout(commit, 800);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') commit();
+    });
+    return () => {
+      clearTimeout(timer);
+      sub.remove();
+    };
   }, [apiKeyDraft, settings.apiKey, applyApiKey]);
 
   // Flash: zichtbaar alleen zolang de draft gelijk is aan de opgeslagen key
