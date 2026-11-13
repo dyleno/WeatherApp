@@ -10,7 +10,7 @@ const { recolorLottieColors } = require('../build-test/core/lottieRecolor');
 const { artKeyForIcon } = require('../build-test/core/weatherArt');
 const { getCondition, setCondition, subscribeCondition } = require('../build-test/core/conditionStore');
 const { withTimeout } = require('../build-test/core/async');
-const { mergeStoredSettings } = require('../build-test/core/settings');
+const { mergeStoredSettings, recoverSettings } = require('../build-test/core/settings');
 
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
@@ -174,6 +174,48 @@ test('mergeStoredSettings laat sessiewijzigingen winnen', () => {
     theme: 'dark',
     apiKey: 'abc123',
   });
+});
+
+test('mergeStoredSettings laat sessie-key winnen boven stored en default', () => {
+  const defaults = { theme: 'system', apiKey: '' };
+  const stored = { theme: 'light', apiKey: 'abc123' };
+  assert.deepEqual(mergeStoredSettings(stored, { theme: 'light', apiKey: 'xyz789' }, defaults), {
+    theme: 'light',
+    apiKey: 'xyz789',
+  });
+});
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+test('recoverSettings geeft de UI vrij op de deadline en herstelt een laat landende lees', async () => {
+  let recovered = null;
+  let gaveUp = 0;
+  const slow = () => new Promise((resolve) => setTimeout(() => resolve({ apiKey: 'abc' }), 60));
+  await recoverSettings(slow, 20, (stored) => { recovered = stored; }, () => { gaveUp += 1; });
+  assert.equal(gaveUp, 1);
+  assert.equal(recovered, null);
+  await sleep(80);
+  assert.deepEqual(recovered, { apiKey: 'abc' });
+});
+
+test('recoverSettings laat een snelle lees direct winnen zonder opgave', async () => {
+  let recovered = null;
+  let gaveUp = 0;
+  const fast = () => new Promise((resolve) => setTimeout(() => resolve({ apiKey: 'xyz' }), 5));
+  await recoverSettings(fast, 500, (stored) => { recovered = stored; }, () => { gaveUp += 1; });
+  await sleep(20);
+  assert.deepEqual(recovered, { apiKey: 'xyz' });
+  assert.equal(gaveUp, 0);
+});
+
+test('recoverSettings geeft na de deadline op bij een hangende lees', async () => {
+  let recovered = 0;
+  let gaveUp = 0;
+  const hang = () => new Promise(() => {});
+  await recoverSettings(hang, 20, () => { recovered += 1; }, () => { gaveUp += 1; });
+  await sleep(40);
+  assert.equal(gaveUp, 1);
+  assert.equal(recovered, 0);
 });
 
 let failed = 0;
