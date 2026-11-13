@@ -11,6 +11,8 @@ const { artKeyForIcon } = require('../build-test/core/weatherArt');
 const { getCondition, setCondition, subscribeCondition } = require('../build-test/core/conditionStore');
 const { withTimeout } = require('../build-test/core/async');
 const { mergeStoredSettings, recoverSettings } = require('../build-test/core/settings');
+const { shouldSearchCities, citySuggestionsFrom } = require('../build-test/core/citySearch');
+const { placeFromGeoHit, labelPlace, commitDefaultLocation } = require('../build-test/core/places');
 
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
@@ -216,6 +218,161 @@ test('recoverSettings geeft na de deadline op bij een hangende lees', async () =
   await sleep(40);
   assert.equal(gaveUp, 1);
   assert.equal(recovered, 0);
+});
+
+// --- citySearch ---
+
+test('shouldSearchCities staat zoeken toe vanaf twee tekens', () => {
+  assert.equal(shouldSearchCities(''), false);
+  assert.equal(shouldSearchCities('   '), false);
+  assert.equal(shouldSearchCities('Z'), false);
+  assert.equal(shouldSearchCities('Zw'), true);
+  assert.equal(shouldSearchCities(' Zw '), true);
+});
+
+test('citySuggestionsFrom plakt Open-Meteo-hits op suggesties', () => {
+  const raw = {
+    results: [
+      { name: 'Zwolle', admin1: 'Overijssel', country: 'Nederland', country_code: 'NL', latitude: 52.5125, longitude: 6.0925, population: 127000 },
+      { name: 'Zwolle', admin1: 'Louisiana', country: 'Verenigde Staten', country_code: 'US', latitude: 31.92, longitude: -93.84, population: 3500 },
+    ],
+  };
+  const suggestions = citySuggestionsFrom(raw, 'zwol');
+  assert.equal(suggestions.length, 2);
+  assert.deepEqual(suggestions[0], { name: 'Zwolle', region: 'Overijssel', country: 'Nederland', countryCode: 'NL', lat: 52.5125, lon: 6.0925 });
+  assert.deepEqual(suggestions[1], { name: 'Zwolle', region: 'Louisiana', country: 'Verenigde Staten', countryCode: 'US', lat: 31.92, lon: -93.84 });
+});
+
+test('citySuggestionsFrom laat hits zonder naam of coördinaten vallen', () => {
+  const raw = {
+    results: [
+      { name: 'Zwolle', latitude: 52.5, longitude: 6.09 },
+      { latitude: 1, longitude: 2 },
+      { name: 'Nergens' },
+      { name: 'Half', latitude: 1 },
+    ],
+  };
+  const suggestions = citySuggestionsFrom(raw, 'zwol');
+  assert.equal(suggestions.length, 1);
+  assert.equal(suggestions[0].name, 'Zwolle');
+});
+
+test('citySuggestionsFrom zonder bruikbare results geeft een lege lijst', () => {
+  assert.deepEqual(citySuggestionsFrom({}, 'zwol'), []);
+  assert.deepEqual(citySuggestionsFrom({ results: [] }, 'zwol'), []);
+  assert.deepEqual(citySuggestionsFrom(null, 'zwol'), []);
+});
+
+test('citySuggestionsFrom ontdubbelt identieke plaatsen op de grootste', () => {
+  const raw = {
+    results: [
+      { name: 'Zwoleń', admin1: 'Mazovië', country: 'Polen', latitude: 51.35, longitude: 21.58, population: 22000 },
+      { name: 'Zwoleń', admin1: 'Mazovië', country: 'Polen', latitude: 52.44, longitude: 19.55, population: 35000 },
+    ],
+  };
+  const suggestions = citySuggestionsFrom(raw, 'zwol');
+  assert.equal(suggestions.length, 1);
+  assert.equal(suggestions[0].lat, 52.44);
+});
+
+test('citySuggestionsFrom rangschikt: voorvoegsel eerst, dan bekendheid (inwoners)', () => {
+  const raw = {
+    results: [
+      { name: 'Kampala', country: 'Oeganda', latitude: 1, longitude: 2, population: 1659600 },
+      { name: 'Kampen', country: 'Nederland', latitude: 3, longitude: 4, population: 39000 },
+      { name: 'Kamp', admin1: 'Stiermarken', country: 'Oostenrijk', latitude: 5, longitude: 6, population: 900 },
+      { name: 'Bargercompascuumkamp', country: 'Nederland', latitude: 7, longitude: 8, population: 500 },
+    ],
+  };
+  const names = citySuggestionsFrom(raw, 'KAMP').map((s) => s.name);
+  assert.deepEqual(names, ['Kampala', 'Kampen', 'Kamp', 'Bargercompascuumkamp']);
+});
+
+test('citySuggestionsFrom rangschikt gelijkvoorvoegselegevallen op inwoneraantal', () => {
+  const raw = {
+    results: [
+      { name: 'Kampaa', country: 'X', latitude: 1, longitude: 2, population: 1000 },
+      { name: 'Kampbb', country: 'Y', latitude: 3, longitude: 4, population: 50000 },
+    ],
+  };
+  const names = citySuggestionsFrom(raw, 'kamp').map((s) => s.name);
+  assert.deepEqual(names, ['Kampbb', 'Kampaa']);
+});
+
+test('citySuggestionsFrom geeft hoogstens vijf suggesties terug', () => {
+  const results = Array.from({ length: 8 }, (_, i) => ({ name: `Kamp${i}`, latitude: i, longitude: i }));
+  assert.equal(citySuggestionsFrom({ results }, 'kamp').length, 5);
+});
+
+// --- places ---
+
+test('placeFromGeoHit vult een Place uit een geo-hit', () => {
+  assert.deepEqual(
+    placeFromGeoHit({ name: 'Zwolle', country: 'NL', lat: 52.5125, lon: 6.0925 }),
+    { name: 'Zwolle', country: 'NL', lat: 52.5125, lon: 6.0925 },
+  );
+});
+
+test('placeFromGeoHit staat een ontbrekend land toe', () => {
+  assert.deepEqual(placeFromGeoHit({ name: 'X', lat: 1, lon: 2 }), { name: 'X', country: '', lat: 1, lon: 2 });
+});
+
+test('placeFromGeoHit geeft null bij onbruikbare hits', () => {
+  assert.equal(placeFromGeoHit(undefined), null);
+  assert.equal(placeFromGeoHit({ country: 'NL', lat: 52.5, lon: 6.09 }), null);
+  assert.equal(placeFromGeoHit({ name: 'Zwolle' }), null);
+  assert.equal(placeFromGeoHit({ name: 'Zwolle', lat: 52.5 }), null);
+});
+
+test('labelPlace toont bij GPS de reverse-geocodeerde plaats op de weer-coördinaten', () => {
+  const weather = { name: 'Kampen', country: 'NL', lat: 52.5, lon: 6.05 };
+  const reverse = { name: 'Zwolle', country: 'NL', lat: 52.51, lon: 6.09 };
+  const place = labelPlace('gps', weather, reverse, null);
+  assert.deepEqual(place, { name: 'Zwolle', country: 'NL', lat: 52.5, lon: 6.05 });
+});
+
+test('labelPlace valt bij GPS terug op de weernaam zonder reverse-hit', () => {
+  const weather = { name: 'Kampen', country: 'NL', lat: 52.5, lon: 6.05 };
+  assert.deepEqual(labelPlace('gps', weather, null, null), weather);
+});
+
+test('labelPlace behoudt bij standaardlocatie de gekozen plaats', () => {
+  const weather = { name: 'Katerveer', country: 'NL', lat: 52.49, lon: 6.08 };
+  const resolved = { name: 'Zwolle', country: 'NL', lat: 52.49, lon: 6.08 };
+  const place = labelPlace('default', weather, { name: 'Kampen', country: 'NL', lat: 52.5, lon: 6.05 }, resolved);
+  assert.equal(place.name, 'Zwolle');
+});
+
+test('labelPlace valt bij standaardlocatie terug op de weernaam zonder resolved', () => {
+  const weather = { name: 'Zwolle', country: 'NL', lat: 52.5, lon: 6.09 };
+  assert.deepEqual(labelPlace('default', weather, null, null), weather);
+});
+
+test('labelPlace houdt het weerland vast als de reverse-hit geen land heeft', () => {
+  const weather = { name: 'Kampen', country: 'NL', lat: 52.5, lon: 6.05 };
+  const reverse = { name: 'Zwolle', country: '', lat: 52.5, lon: 6.05 };
+  const place = labelPlace('gps', weather, reverse, null);
+  assert.equal(place.country, 'NL');
+});
+
+test('commitDefaultLocation behoudt de geverifieerde plaats bij dezelfde naam', () => {
+  const place = { name: 'Zwolle', country: 'NL', lat: 52.5, lon: 6.09 };
+  assert.deepEqual(
+    commitDefaultLocation(' Zwolle ', place),
+    { defaultLocation: 'Zwolle', defaultPlace: place },
+  );
+});
+
+test('commitDefaultLocation wist de geverifieerde plaats bij een andere tekst', () => {
+  const place = { name: 'Zwolle', country: 'NL', lat: 52.5, lon: 6.09 };
+  assert.deepEqual(
+    commitDefaultLocation('Amersfoort', place),
+    { defaultLocation: 'Amersfoort', defaultPlace: null },
+  );
+});
+
+test('commitDefaultLocation geeft null bij een leeg veld', () => {
+  assert.equal(commitDefaultLocation('   ', null), null);
 });
 
 let failed = 0;

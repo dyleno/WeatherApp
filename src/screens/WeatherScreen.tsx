@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -25,17 +25,19 @@ import { compassPoint, windValueLabel } from '../core/wind';
 import { celsiusToUnit } from '../core/temperature';
 import { humidityKey } from '../core/conditions';
 import { countryName } from '../core/countries';
+import { labelPlace } from '../core/places';
 import { buildDemoSnapshot } from '../services/demoWeather';
-import { fetchCurrentWeather, fetchForecast } from '../services/owmApi';
+import { fetchCurrentWeather, fetchForecast, reverseGeocodePlace } from '../services/owmApi';
 import { requestCurrentLocation, resolveDefaultCity } from '../services/location';
 import { OWM_API_KEY } from '../config';
 import { useSettings } from '../state/SettingsContext';
 import { localeOf, type TranslateKey } from '../i18n/translations';
 import { type as typeScale } from '../theme/tokens';
-import type { WeatherSnapshot } from '../core/types';
+import type { LocationSource, Place, WeatherSnapshot } from '../core/types';
 
 type ErrorState = { key: TranslateKey; vars?: Record<string, string> };
-type BannerState = { text: string; action?: () => void };
+type BannerAction = 'openSettings' | 'retry' | 'locationSettings';
+type BannerState = { text: string; action: BannerAction };
 
 // Gestaffelde binnenkomst: elk blok glijdt iets later naar binnen.
 // Builders buiten de component (aanrading reanimated-docs: stabiel qua referentie).
@@ -53,59 +55,89 @@ export const WeatherScreen = () => {
   const [error, setError] = useState<ErrorState | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const loadSeq = useRef(0);
+  const hasSnapshotRef = useRef(false);
 
   const apiKey = settings.apiKey.trim() || OWM_API_KEY;
   const isDemo = apiKey === '';
+  const defaultPlace = settings.defaultPlace;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { userInitiated?: boolean }) => {
+    const seq = ++loadSeq.current;
+    const userInitiated = opts?.userInitiated ?? false;
     setError(null);
 
     if (isDemo) {
       setLocationDenied(false);
-      setIsRefreshing(false);
+      if (userInitiated) setIsRefreshing(false);
+      if (loadSeq.current !== seq) return;
       setSnapshot(buildDemoSnapshot(new Date(), settings.language));
+      hasSnapshotRef.current = true;
       return;
     }
 
-    setIsRefreshing(true);
+    if (userInitiated) setIsRefreshing(true);
     try {
       const location = await requestCurrentLocation();
+      // Verouderde run (nieuwer verzoek actief): resultaat negeren.
+      if (loadSeq.current !== seq) return;
       setLocationDenied(location.status === 'denied');
 
       let coords: { lat: number; lon: number };
-      let locationSource: 'gps' | 'default' = 'default';
+      let locationSource: LocationSource = 'default';
+      let resolvedPlace: Place | null = null;
 
       if (location.status === 'granted') {
         locationSource = 'gps';
         coords = { lat: location.lat, lon: location.lon };
+      } else if (defaultPlace) {
+        // Geverifieerde keuze uit de zoeksuggesties: coördinaten zijn al
+        // bekend, geen geocoding nodig (werkt ook offline).
+        coords = { lat: defaultPlace.lat, lon: defaultPlace.lon };
+        resolvedPlace = defaultPlace;
       } else {
         const resolved = await resolveDefaultCity(apiKey, settings.defaultLocation, settings.language);
         if (!resolved) {
+          if (loadSeq.current !== seq) return;
           setError({ key: 'weather.cityNotFound', vars: { city: settings.defaultLocation } });
           return;
         }
         coords = { lat: resolved.lat, lon: resolved.lon };
+        resolvedPlace = resolved;
       }
 
-      const [currentResult, entries] = await Promise.all([
+      const [currentResult, entries, reversePlace] = await Promise.all([
         fetchCurrentWeather(apiKey, coords, settings.language),
         fetchForecast(apiKey, coords, settings.language),
+        // Alleen bij GPS: het weerantwoord-label kan uit de verkeerde plaats
+        // komen; de echte gemeentenaam komt uit de reverse-geocoding. Faalt
+        // deze, dan valt het label stil terug op het weerantwoord.
+        locationSource === 'gps'
+          ? reverseGeocodePlace(apiKey, coords, settings.language).catch(() => null)
+          : Promise.resolve(null),
       ]);
 
+      if (loadSeq.current !== seq) return;
       setSnapshot({
         isDemo: false,
         locationSource,
-        place: currentResult.place,
+        place: labelPlace(locationSource, currentResult.place, reversePlace, resolvedPlace),
         current: currentResult.current,
         trend: entries[0] ? pressureTrend(currentResult.current.pressureHpa, entries[0].pressureHpa) : 'stable',
         daily: aggregateDaily(entries, new Date(), 5),
       });
+      hasSnapshotRef.current = true;
     } catch {
+      if (loadSeq.current !== seq) return;
+      // Achtergrondfout (bijv. taalwissel): bestaande data blijft staan, geen melding.
+      if (!userInitiated && hasSnapshotRef.current) return;
       setError({ key: 'weather.errorBanner' });
     } finally {
-      setIsRefreshing(false);
+      // Alleen een user-initiated run bedient de spinner; achtergrondruns raken
+      // de refresh-status nooit aan.
+      if (userInitiated) setIsRefreshing(false);
     }
-  }, [apiKey, isDemo, settings.defaultLocation, settings.language]);
+  }, [apiKey, isDemo, defaultPlace, settings.defaultLocation, settings.language]);
 
   useEffect(() => {
     // Start de fetch ná de mount-tick: de effect-body zelf doet dan geen
@@ -139,13 +171,21 @@ export const WeatherScreen = () => {
     }
   };
 
+  // De banner is pure data; pressBanner vertaalt de actie pas bij de klik naar een effect.
+  // Zo stroomt de ref-muterende load-callback niet mee in een render-afgeleide waarde.
   const banner: BannerState | null = isDemo
-    ? { text: t('weather.demoBanner'), action: () => router.push('/(tabs)/instellingen') }
+    ? { text: t('weather.demoBanner'), action: 'openSettings' }
     : error
-      ? { text: t(error.key, error.vars), action: () => void load() }
+      ? { text: t(error.key, error.vars), action: 'retry' }
       : locationDenied
-        ? { text: t('weather.locationBanner'), action: () => void Linking.openSettings() }
+        ? { text: t('weather.locationBanner'), action: 'locationSettings' }
         : null;
+
+  const pressBanner = (action: BannerAction) => {
+    if (action === 'openSettings') router.push('/(tabs)/instellingen');
+    else if (action === 'retry') void load({ userInitiated: true });
+    else void Linking.openSettings();
+  };
 
   if (!snapshot) {
     return (
@@ -153,7 +193,7 @@ export const WeatherScreen = () => {
         <AppHeader
           colors={palette}
           right={
-            <PressableScale accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load()}>
+            <PressableScale accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load({ userInitiated: true })}>
               <MaterialCommunityIcons name="refresh" size={22} color={palette.muted} />
             </PressableScale>
           }
@@ -161,10 +201,10 @@ export const WeatherScreen = () => {
         <View style={styles.center}>
           {error ? (
             <View style={styles.centerInner}>
-              <Banner text={t(error.key, error.vars)} colors={palette} onPress={() => void load()} />
+              <Banner text={t(error.key, error.vars)} colors={palette} onPress={() => void load({ userInitiated: true })} />
               <PressableScale
                 style={[styles.retry, { borderColor: palette.border }]}
-                onPress={() => void load()}
+                onPress={() => void load({ userInitiated: true })}
               >
                 <Text style={[typeScale.body, { color: palette.text }]}>{t('weather.refresh')}</Text>
               </PressableScale>
@@ -293,7 +333,7 @@ export const WeatherScreen = () => {
       <AppHeader
         colors={palette}
         right={
-          <PressableScale accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load()}>
+          <PressableScale accessibilityLabel={t('weather.refresh')} hitSlop={8} onPress={() => void load({ userInitiated: true })}>
             <MaterialCommunityIcons name="refresh" size={22} color={palette.muted} />
           </PressableScale>
         }
@@ -305,7 +345,7 @@ export const WeatherScreen = () => {
             : [styles.portraitContent, { backgroundColor: palette.bg }]
         }
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={() => void load()} tintColor={palette.accent} />
+          <RefreshControl refreshing={isRefreshing} onRefresh={() => void load({ userInitiated: true })} tintColor={palette.accent} />
         }
       >
         {isLandscape ? (
@@ -314,7 +354,7 @@ export const WeatherScreen = () => {
               <Animated.View entering={ENTER_HERO}>{hero}</Animated.View>
               {banner ? (
                 <Animated.View entering={ENTER_BANNER}>
-                  <Banner text={banner.text} colors={palette} onPress={banner.action} />
+                  <Banner text={banner.text} colors={palette} onPress={() => pressBanner(banner.action)} />
                 </Animated.View>
               ) : null}
               <Animated.View entering={ENTER_TILES}>{tiles}</Animated.View>
@@ -328,7 +368,7 @@ export const WeatherScreen = () => {
             <Animated.View entering={ENTER_HERO}>{hero}</Animated.View>
             {banner ? (
               <Animated.View entering={ENTER_BANNER}>
-                <Banner text={banner.text} colors={palette} onPress={banner.action} />
+                <Banner text={banner.text} colors={palette} onPress={() => pressBanner(banner.action)} />
               </Animated.View>
             ) : null}
             <Animated.View entering={ENTER_TILES}>{tiles}</Animated.View>

@@ -1,4 +1,5 @@
 import { capitalizeFirst } from '../core/conditions';
+import { placeFromGeoHit, type GeoHit } from '../core/places';
 import type { CurrentWeather, ForecastEntry, Language, Place } from '../core/types';
 
 const BASE_URL = 'https://api.openweathermap.org';
@@ -84,16 +85,34 @@ export const fetchForecast = async (
   }));
 };
 
-type GeocodeResponse = { name: string; country?: string; lat: number; lon: number }[];
+type GeoResponse = GeoHit[];
 
+// Forward: plaatsnaam → coördinaten. Reverse: coördinaten → plaatslabel.
+// Beide endpoints geven dezelfde hit-vorm terug; wat een bruikbare hit is,
+// staat in core/places.
 export const geocodeCity = async (apiKey: string, query: string, language: Language): Promise<Place | null> => {
   const raw = (await requestJson('/geo/1.0/direct', apiKey, {
     q: query,
     limit: '1',
     lang: language,
-  })) as GeocodeResponse;
+  })) as GeoResponse;
+  return placeFromGeoHit(raw[0]);
+};
 
-  const hit = raw[0];
-  if (!hit) return null;
-  return { lat: hit.lat, lon: hit.lon, name: hit.name, country: hit.country ?? '' };
+// Reverse-geocoding voor het plaatslabel bij een GPS-fix: OpenWeather stempelt
+// het weerantwoord met de dichtstbijzijnde plaats uit zijn eigen database, wat
+// voor een fix in Zwolle "Kampen" kan zeggen. Dit endpoint geeft de echte
+// gemeentenaam terug.
+export const reverseGeocodePlace = async (
+  apiKey: string,
+  coords: { lat: number; lon: number },
+  language: Language,
+): Promise<Place | null> => {
+  const raw = (await requestJson('/geo/1.0/reverse', apiKey, {
+    lat: String(coords.lat),
+    lon: String(coords.lon),
+    limit: '1',
+    lang: language,
+  })) as GeoResponse;
+  return placeFromGeoHit(raw[0]);
 };

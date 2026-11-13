@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   windUnit: 'kmh',
   language: 'nl',
   defaultLocation: 'Zwolle',
+  defaultPlace: null,
   apiKey: '',
 };
 

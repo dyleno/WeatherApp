@@ -15,7 +15,7 @@ export const AppHeader = ({ colors, right }: Props) => {
     <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
       <LogoMark size={40} teal={colors.teal} accent={colors.accent} />
       <View style={styles.titleBlock}>
-        <Text style={[styles.title, { color: colors.text }]}>Deltion</Text>
+        <Text style={[styles.title, { color: colors.text }]}>WeatherApp</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>weer</Text>
       </View>
       <View style={styles.right}>{right}</View>

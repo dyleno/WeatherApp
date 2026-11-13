@@ -1,4 +1,5 @@
 export type Language = 'nl' | 'en';
+export type LocationSource = 'gps' | 'default';
 export type TempUnit = 'celsius' | 'fahrenheit';
 export type WindUnit = 'kmh' | 'ms' | 'knots' | 'beaufort';
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -10,6 +11,10 @@ export type Settings = {
   windUnit: WindUnit;
   language: Language;
   defaultLocation: string;
+  // Geverifieerde plaats uit de zoeksuggesties: coördinaten al bekend, geen
+  // geocoding meer nodig (werkt ook offline). null = vrije tekst, later
+  // resolven via geocodeCity.
+  defaultPlace: Place | null;
   apiKey: string;
 };
 
@@ -51,7 +56,7 @@ export type ForecastDay = {
 
 export type WeatherSnapshot = {
   isDemo: boolean;
-  locationSource: 'gps' | 'default';
+  locationSource: LocationSource;
   place: Place;
   current: CurrentWeather;
   trend: PressureTrend;

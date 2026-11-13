@@ -9,12 +9,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppHeader } from '../components/AppHeader';
+import { CitySearchField } from '../components/CitySearchField';
 import { Segmented } from '../components/Segmented';
 import { SelectGrid } from '../components/SelectGrid';
 import { Divider, SettingSection } from '../components/SettingSection';
 import { useSettings } from '../state/SettingsContext';
+import type { CitySuggestion } from '../core/citySearch';
+import { commitDefaultLocation } from '../core/places';
 import { type as typeScale } from '../theme/tokens';
 
 export const SettingsScreen = () => {
@@ -37,12 +39,29 @@ export const SettingsScreen = () => {
   }
 
   const commitLocation = () => {
-    const trimmed = locationDraft.trim();
-    if (trimmed === '') {
+    // De kern beslist: bevestiging van de gekozen naam behoudt de
+    // geverifieerde plaats, andere tekst is vrije tekst zonder coördinaten.
+    const patch = commitDefaultLocation(locationDraft, settings.defaultPlace);
+    if (!patch) {
       setLocationDraft(settings.defaultLocation);
       return;
     }
-    update({ defaultLocation: trimmed });
+    update(patch);
+  };
+
+  // Keuze uit de suggesties: een geverifieerde plaats met coördinaten gaat
+  // mee naar de settings, zodat het weerblad niet opnieuw hoeft te geocoden.
+  const pickLocation = (suggestion: CitySuggestion) => {
+    setLocationDraft(suggestion.name);
+    update({
+      defaultLocation: suggestion.name,
+      defaultPlace: {
+        lat: suggestion.lat,
+        lon: suggestion.lon,
+        name: suggestion.name,
+        country: suggestion.countryCode,
+      },
+    });
   };
 
   const [savedFlash, setSavedFlash] = useState(false);
@@ -124,21 +143,16 @@ export const SettingsScreen = () => {
           </View>
 
           <SettingSection title={t('settings.defaultLocation')} colors={palette}>
-            <View style={[styles.field, { backgroundColor: palette.field, borderColor: palette.border }]}>
-              <MaterialCommunityIcons name="map-marker-outline" size={18} color={palette.muted} />
-              <TextInput
-                style={[styles.input, { color: palette.text }]}
-                value={locationDraft}
-                onChangeText={setLocationDraft}
-                onEndEditing={commitLocation}
-                onSubmitEditing={commitLocation}
-                placeholder={t('settings.locationPlaceholder')}
-                placeholderTextColor={palette.muted}
-                autoCorrect={false}
-                autoComplete="off"
-                returnKeyType="done"
-              />
-            </View>
+            <CitySearchField
+              value={locationDraft}
+              language={settings.language}
+              placeholder={t('settings.locationPlaceholder')}
+              noMatchesLabel={t('settings.noMatches')}
+              colors={palette}
+              onChangeText={setLocationDraft}
+              onEndEditing={commitLocation}
+              onPick={pickLocation}
+            />
           </SettingSection>
 
           <SettingSection title={t('settings.temperature')} colors={palette}>
