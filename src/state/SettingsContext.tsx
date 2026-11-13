@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { useColorScheme } from 'react-native';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '../services/settingsStore';
 import { withTimeout } from '../core/async';
+import { mergeStoredSettings } from '../core/settings';
 import { interpolate, translations, type TranslateFn, type TranslateKey } from '../i18n/translations';
 import { palette, type Palette } from '../theme/tokens';
 import type { Settings } from '../core/types';
@@ -36,8 +37,21 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       })
       .catch(() => {
         if (!active) return;
-        loadedRef.current = true;
-        setIsLoaded(true);
+        // Eerste leespoging faalde (traag of hangend): herhaal het een keer op
+        // de achtergrond. Zonder retry zou een latere update defaults
+        // wegschrijven en de opgeslagen API key wissen.
+        void loadSettings()
+          .then((stored) => {
+            if (!active) return;
+            loadedRef.current = true;
+            setSettings((previous) => mergeStoredSettings(stored, previous, DEFAULT_SETTINGS));
+            setIsLoaded(true);
+          })
+          .catch(() => {
+            if (!active) return;
+            loadedRef.current = true;
+            setIsLoaded(true);
+          });
       });
     return () => {
       active = false;
